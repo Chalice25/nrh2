@@ -2,122 +2,125 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Navaraj Chakri 3rd Floor - 3D Plan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Floor Plan - Navaraj Chakri (Detail)</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c3e50; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; pointer-events: none; border-left: 5px solid #3498db; }
-        canvas { display: block; }
-        .controls-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.6); font-size: 12px; }
+        body { margin: 0; overflow: hidden; background-color: #2c3e50; font-family: sans-serif; }
+        #info {
+            position: absolute; top: 10px; width: 100%; text-align: center;
+            color: white; background: rgba(0,0,0,0.5); padding: 5px; pointer-events: none;
+        }
+        .controls-hint {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,0.7); font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px;
+        }
     </style>
 </head>
 <body>
 
-<div id="ui">
-    <h2 style="margin:0">อาคารนวราชจักรี ชั้น 3</h2>
-    <p style="margin:5px 0 0 0; opacity: 0.8;">แผนผังห้องปฏิบัติการเทคนิคการแพทย์ (3D)</p>
-</div>
-<div class="controls-hint">คลิกซ้าย: หมุน | คลิกขวา: ย้าย | สกロール: ซูม</div>
+    <div id="info">แผนผัง 3D อาคารนวราชจักรี ชั้น 3 (แบบละเอียด)</div>
+    <div class="controls-hint">หมุน: คลิกซ้าย | เลื่อนมุมมอง: คลิกขวา | ซูม: สกロール</div>
 
-<script type="importmap">
-{
-    "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-    }
-}
-</script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
 
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// --- INITIALIZE ---
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a1a);
+        let scene, camera, renderer, controls;
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(25, 25, 25);
+        function init() {
+            // 1. สร้าง Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x34495e);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
+            // 2. สร้าง Camera (มุมมองกล้อง)
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(10, 15, 20); // ตั้งค่าตำแหน่งกล้อง
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+            // 3. สร้าง Renderer (ตัวแสดงผล)
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-// --- LIGHTING ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
+            // 4. เพิ่ม OrbitControls (เพื่อให้หมุน ซูมได้)
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; // เพิ่มความนุ่มนวล
+            controls.dampingFactor = 0.05;
 
-const sunLight = new THREE.DirectionalLight(0xffffff, 1);
-sunLight.position.set(10, 20, 10);
-sunLight.castShadow = true;
-scene.add(sunLight);
+            // 5. เพิ่มแสงสว่าง
+            scene.add(new THREE.AmbientLight(0x404040, 2)); // แสงรอบทิศทาง
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // แสงทิศทางเดียว
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
 
-// --- FLOOR ---
-const floorGeo = new THREE.PlaneGeometry(40, 40);
-const floorMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
-const floor = new THREE.Mesh(floorGeo, floorMat);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
+            // --- 6. โหลดรูปภาพผัง (Texture Mapping) ---
+            const loader = new THREE.TextureLoader();
+            // *** สำคัญ: เปลี่ยนตรงนี้เป็นชื่อไฟล์รูปภาพที่คุณอัปโหลด ***
+            loader.load('navaraj_plan.png', (texture) => {
+                
+                // --- ส่วนที่ 1: พื้น (Floor) ---
+                const floorGeometry = new THREE.PlaneGeometry(30, 20); // ปรับขนาดพื้นตามต้องการ
+                const floorMaterial = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
+                const floor = new THREE.Mesh(floorGeometry, floorMatMaterial);
+                floor.rotation.x = -Math.PI / 2; // คว่ำพื้นลง
+                floor.position.y = -0.1; // ต่ำกว่ากล่องเล็กน้อย
+                scene.add(floor);
 
-const grid = new THREE.GridHelper(40, 40, 0x444444, 0x222222);
-scene.add(grid);
+                // --- ส่วนที่ 2: กล่องแทนอาคาร (Building Box) ---
+                // กล่องใหญ่ครอบพื้นที่ห้องแล็บหลัก
+                const mainLabGeometry = new THREE.BoxGeometry(10, 3, 15); // x, height, z
+                const mainLabMaterial = new THREE.MeshPhongMaterial({ color: 0xe0e0e0, transparent: true, opacity: 0.8 });
+                const mainLab = new THREE.Mesh(mainLabGeometry, mainLabMaterial);
+                mainLab.position.set(5, 1.5, 0); // ตั้งพิกัด
+                scene.add(mainLab);
 
-// --- ROOM CREATOR FUNCTION ---
-function addRoom(name, x, z, w, d, color) {
-    const h = 2.5; // ความสูงห้อง
-    const geometry = new THREE.BoxGeometry(w, h, d);
-    const material = new THREE.MeshPhongMaterial({ 
-        color: color, 
-        transparent: true, 
-        opacity: 0.85,
-        shininess: 100
-    });
-    
-    const room = new THREE.Mesh(geometry, material);
-    room.position.set(x, h/2, z);
-    room.castShadow = true;
-    room.receiveShadow = true;
-    scene.add(room);
+                // กล่องใหญ่ครอบพื้นที่ออฟฟิศ
+                const officeGeometry = new THREE.BoxGeometry(10, 3, 10); // x, height, z
+                const officeMaterial = new THREE.MeshPhongMaterial({ color: 0xd0d0d0, transparent: true, opacity: 0.8 });
+                const office = new THREE.Mesh(officeGeometry, officeMaterial);
+                office.position.set(-5, 1.5, 2); // ตั้งพิกัด
+                scene.add(office);
 
-    // สร้างเส้นขอบห้อง
-    const edges = new THREE.EdgesGeometry(geometry);
-    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.3, transparent: true }));
-    line.position.copy(room.position);
-    scene.add(line);
-}
+                // --- ส่วนที่ 3: แปะผังบนหลังคากล่อง (Roof Plan) ---
+                const roofGeometry = new THREE.PlaneGeometry(30, 20); // ขนาดเดียวกับพื้น
+                const roofMaterial = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
+                const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+                roof.rotation.x = -Math.PI / 2;
+                roof.position.y = 3.01; // วางทับหลังคากล่อง Main Lab และ Office
+                scene.add(roof);
 
-// --- BUILDING LAYOUT (อ้างอิงจากผังที่ส่งมา) ---
-// โซนแล็บด้านบนและขวา
-addRoom("Infectious Lab", 8, -10, 4, 6, 0xe74c3c); // แดง (คัดกรองเชื้อ)
-addRoom("Clin. Chemistry", 8, -2, 4, 8, 0x3498db); // น้ำเงิน
-addRoom("Biomolecular", 8, 7, 4, 4, 0x9b59b6);    // ม่วง
-addRoom("Clin. Microscopy", 2, -11, 6, 4, 0x1abc9c); // เขียวมิ้นต์
+            });
 
-// โซนกลาง
-addRoom("Hematology Lab", -2, -8, 6, 5, 0xf1c40f); // เหลือง
-addRoom("Blood Bank Lab", -2, -2, 4, 4, 0xe67e22); // ส้ม
-addRoom("Clin. Microbiology", 2, 5, 5, 6, 0x2ecc71); // เขียว
+            // 7. ฟังก์ชันสำหรับการ Resize หน้าจอ
+            window.addEventListener('resize', onWindowResize, false);
+        }
 
-// โซน Office ด้านซ้าย/ล่าง
-addRoom("Office / Admin", -8, 5, 6, 10, 0x95a5a6); // เทา
-addRoom("Reception", -8, -5, 4, 4, 0xecf0f1);    // ขาว
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
 
-// --- ANIMATION LOOP ---
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-}
+        // 8. ฟังก์ชันการ Render (แสดงผลอย่างต่อเนื่อง)
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update(); // อัปเดตการควบคุม
+            renderer.render(scene, camera);
+        }
 
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
+        init();
+        animate();
+    </script>
+</body>
+</html>;
 
 animate();
 </script>
