@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Navaraj Chakri 3rd Floor - 3D Plan</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c3e50; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; pointer-events: none; border-left: 5px solid #3498db; }
+        canvas { display: block; }
+        .controls-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.6); font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <h2 style="margin:0">อาคารนวราชจักรี ชั้น 3</h2>
+    <p style="margin:5px 0 0 0; opacity: 0.8;">แผนผังห้องปฏิบัติการเทคนิคการแพทย์ (3D)</p>
+</div>
+<div class="controls-hint">คลิกซ้าย: หมุน | คลิกขวา: ย้าย | สกロール: ซูม</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// --- INITIALIZE ---
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a1a);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(25, 25, 25);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// --- LIGHTING ---
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+sunLight.position.set(10, 20, 10);
+sunLight.castShadow = true;
+scene.add(sunLight);
+
+// --- FLOOR ---
+const floorGeo = new THREE.PlaneGeometry(40, 40);
+const floorMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const grid = new THREE.GridHelper(40, 40, 0x444444, 0x222222);
+scene.add(grid);
+
+// --- ROOM CREATOR FUNCTION ---
+function addRoom(name, x, z, w, d, color) {
+    const h = 2.5; // ความสูงห้อง
+    const geometry = new THREE.BoxGeometry(w, h, d);
+    const material = new THREE.MeshPhongMaterial({ 
+        color: color, 
+        transparent: true, 
+        opacity: 0.85,
+        shininess: 100
+    });
+    
+    const room = new THREE.Mesh(geometry, material);
+    room.position.set(x, h/2, z);
+    room.castShadow = true;
+    room.receiveShadow = true;
+    scene.add(room);
+
+    // สร้างเส้นขอบห้อง
+    const edges = new THREE.EdgesGeometry(geometry);
+    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.3, transparent: true }));
+    line.position.copy(room.position);
+    scene.add(line);
+}
+
+// --- BUILDING LAYOUT (อ้างอิงจากผังที่ส่งมา) ---
+// โซนแล็บด้านบนและขวา
+addRoom("Infectious Lab", 8, -10, 4, 6, 0xe74c3c); // แดง (คัดกรองเชื้อ)
+addRoom("Clin. Chemistry", 8, -2, 4, 8, 0x3498db); // น้ำเงิน
+addRoom("Biomolecular", 8, 7, 4, 4, 0x9b59b6);    // ม่วง
+addRoom("Clin. Microscopy", 2, -11, 6, 4, 0x1abc9c); // เขียวมิ้นต์
+
+// โซนกลาง
+addRoom("Hematology Lab", -2, -8, 6, 5, 0xf1c40f); // เหลือง
+addRoom("Blood Bank Lab", -2, -2, 4, 4, 0xe67e22); // ส้ม
+addRoom("Clin. Microbiology", 2, 5, 5, 6, 0x2ecc71); // เขียว
+
+// โซน Office ด้านซ้าย/ล่าง
+addRoom("Office / Admin", -8, 5, 6, 10, 0x95a5a6); // เทา
+addRoom("Reception", -8, -5, 4, 4, 0xecf0f1);    // ขาว
+
+// --- ANIMATION LOOP ---
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate();
+</script>
+
+</body>
+</html>
